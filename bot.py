@@ -207,7 +207,7 @@ class SimpleAzkarBot:
         # شغّل المهمة ومرر data فارغة لحفظ last_message_id لاحقاً
         context.job_queue.run_repeating(
             callback=self.send_zikr,
-            interval=7200,  # 2 ساعة
+            interval=60,  # 2 ساعة
             first=1,        # بداية بعد ثانية واحدة لتفعيل سريع
             name=str(chat_id),
             chat_id=chat_id,
@@ -229,3 +229,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
