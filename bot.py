@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-بوت أذكار بملف واحد
-- يعمل بالـ polling
-- يرسل ذكر لكل دردشة كل 30 ثانية للتجربة
-- التوكن مدمج داخل الملف
+بوت أذكار ثابت للقنوات والمجموعات
+- يرسل ذكر لكل دردشة محددة كل 30 ثانية للتجربة
+- يبدأ مباشرة عند تشغيل البوت لكل chat_id مذكور
 """
 
 import sys
@@ -12,18 +11,11 @@ import subprocess
 import logging
 from typing import Dict, Optional
 
-# ---- تثبيت الحزمة تلقائياً إن لم تكن موجودة ----
+# تثبيت الحزمة تلقائياً إن لم تكن موجودة
 try:
     import telegram
 except Exception:
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.3"])
-    except Exception:
-        try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot"])
-        except Exception as e:
-            print("فشل تثبيت مكتبة python-telegram-bot تلقائياً:", e, file=sys.stderr)
-            raise
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "python-telegram-bot==20.3"])
 
 from telegram import Update
 from telegram.constants import ParseMode
@@ -38,23 +30,28 @@ from telegram.ext import (
 
 BOT_TOKEN = "8402234547:AAEoQZWPToTRkdHUc5qvy91JQB5619QUG9U"
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    level=logging.INFO,
-)
-logger = logging.getLogger("singlefile_azkar_bot")
+# قائمة الـ Chat IDs للمجموعات/القنوات التي تريد إرسال الأذكار لها
+FIXED_CHAT_IDS = [
+    -1003074032990,  # تجارب
+    -1003088520407,  # الادراة
+    -1003028994230,  # أهل الحق
+    -1002986847855,  # سيف الكلمة
+]
+
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", level=logging.INFO)
+logger = logging.getLogger("azkar_fixed_bot")
 
 AZKAR_LIST = [
-    "🌸 اللَّهُمَّ بِكَ أَصْبَحْنَا ...",
-    "🍃 اللّهُمَّ أَنْتَ رَبِّي ...",
-    "🌿 لَا إِلَهَ إِلَّا اللَّهُ ...",
-    "📖 ﴿اللَّهُ لَا إِلَهَ إِلَّا هُوَ ...﴾",
-    "🌸 يَا حَيُّ يَا قَيُّومُ ...",
-    "🍃 بِسْمِ اللَّهِ الَّذِي ...",
-    "🌿 اللّهُمَّ إِنِّي أَسْأَلُكَ ...",
+    "🌸 اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا ...",
+    "🍃 اللّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ ...",
+    "🌿 لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ ...",
+    "📖 ﴿اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ ...﴾",
+    "🌸 يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ ...",
+    "🍃 بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ ...",
+    "🌿 اللّهُمَّ إِنِّي أَسْأَلُكَ مِنَ الْخَيْرِ ...",
     "🌸 اللّهُمَّ أَصْلِحْ لِي دِينِي ...",
-    "🍃 اللّهُمَّ رَبَّنَا آتِنَا ...",
-    "🌿 يَا مُقَلِّبَ الْقُلُوبِ ...",
+    "🍃 اللّهُمَّ رَبَّنَا آتِنَا فِي الدُّنْيَا ...",
+    "🌿 يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي ...",
     "🌸 رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ ...",
     "🍃 اللّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا ...",
 ]
@@ -77,12 +74,9 @@ class SimpleAzkarBot:
         try:
             chat = update.effective_chat
             if chat and chat.type == "private":
-                await update.message.reply_text("أهلاً بك\nأنا بوت الأذكار سأرسل ذكرًا كل 30 ثانية للمجموعات والقنوات")
-            else:
-                if update.message:
-                    await update.message.reply_text("بوت الأذكار جاهز سيتم إرسال الأذكار كل 30 ثانية")
+                await update.message.reply_text("أهلاً بك\nسيتم إرسال الأذكار للمجموعات المحددة")
         except Exception:
-            logger.debug("تعذّر إرسال رسالة start ربما نوع القناة لا يسمح بالرد")
+            pass
 
     def get_next_zikr(self, chat_id: int) -> str:
         if chat_id not in self.chat_states:
@@ -109,8 +103,7 @@ class SimpleAzkarBot:
             job.data = {"last_message_id": sent.message_id}
         except Exception as e:
             msg = str(e).lower()
-            logger.error(f"خطأ في إرسال ذكر إلى {chat_id}: {e}")
-            if "bot was kicked" in msg or "chat not found" in msg or "forbidden" in msg or "not enough rights" in msg:
+            if "bot was kicked" in msg or "chat not found" in msg or "forbidden" in msg:
                 for j in context.job_queue.get_jobs_by_name(str(chat_id)):
                     j.schedule_removal()
 
@@ -143,7 +136,6 @@ class SimpleAzkarBot:
         new_status = new_member.status
         if new_status in ("member", "administrator"):
             title = getattr(chat, "title", str(chat.id))
-            logger.info(f"البوت أُضيف أو ترقّي في {title} id={chat.id} نبدأ المهمة")
             self.start_zikr_job(context, chat.id, title)
 
     def start_zikr_job(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, chat_title: str) -> None:
@@ -153,6 +145,9 @@ class SimpleAzkarBot:
         context.job_queue.run_repeating(callback=self.send_zikr, interval=30, first=1, name=str(chat_id), chat_id=chat_id, data={})
 
     def run(self) -> None:
+        # بدء مهام الأذكار مباشرة لكل Chat ID ثابت
+        for chat_id in FIXED_CHAT_IDS:
+            self.start_zikr_job(self.application.bot_data, chat_id, str(chat_id))
         logger.info("تشغيل بوت الأذكار بالـ polling")
         self.application.run_polling()
 
