@@ -195,24 +195,24 @@ class SimpleAzkarBot:
             logger.info(f"البوت أُضيف أو ترقّي في {title} id={chat.id} نبدأ المهمة")
             self.start_zikr_job(context, chat.id, title)
 
-    def start_zikr_job(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, chat_title: str) -> None:
-        """
-        بدء مهمة متكررة مسماة باسم chat_id
-        الفاصل الزمني 7200 ثانية = ساعتان
-        """
-        logger.info(f"بدء/تحديث مهمة الأذكار للدردشة {chat_title} ({chat_id})")
-        # إزالة أي مهام سابقة بنفس الاسم
-        for job in context.job_queue.get_jobs_by_name(str(chat_id)):
-            job.schedule_removal()
-        # شغّل المهمة ومرر data فارغة لحفظ last_message_id لاحقاً
-        context.job_queue.run_repeating(
-            callback=self.send_zikr,
-            interval=7200,  # 2 ساعة
-            first=1,        # بداية بعد ثانية واحدة لتفعيل سريع
-            name=str(chat_id),
-            chat_id=chat_id,
-            data={},
-        )
+   def start_zikr_job(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int, chat_title: str) -> None:
+    """
+    بدء مهمة متكررة مسماة باسم chat_id
+    الفاصل الزمني للتجربة 30 ثانية (0.5 دقيقة)
+    """
+    logger.info(f"بدء/تحديث مهمة الأذكار للدردشة {chat_title} ({chat_id})")
+    # إزالة أي مهام سابقة بنفس الاسم
+    for job in context.job_queue.get_jobs_by_name(str(chat_id)):
+        job.schedule_removal()
+    # شغّل المهمة ومرر data فارغة لحفظ last_message_id لاحقاً
+    context.job_queue.run_repeating(
+        callback=self.send_zikr,
+        interval=30,  # نصف دقيقة للتجربة
+        first=1,      # البداية بعد ثانية واحدة
+        name=str(chat_id),
+        chat_id=chat_id,
+        data={},
+    )
 
     def run(self) -> None:
         """تشغيل البوت بالـ polling"""
@@ -229,5 +229,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 
