@@ -75,7 +75,7 @@ async def send_azkar_loop():
                 chat_states[chat_id] = (index + 1) % len(AZKAR_LIST)
             except Exception as e:
                 logger.error(f"خطأ عند الإرسال لـ {chat_id}: {e}")
-        await asyncio.sleep(30)
+        await asyncio.sleep(7200)
 
 # ===== أمر /start =====
 @client.on(events.NewMessage(pattern='/start'))
@@ -91,3 +91,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
